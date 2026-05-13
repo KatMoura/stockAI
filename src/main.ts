@@ -1829,10 +1829,19 @@ function subscribeToRealtime(): void {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'usuarios' }, () => {
       void refreshData('Usuarios atualizados em tempo real');
     })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+      void refreshData('Usuarios atualizados em tempo real');
+    })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, () => {
       void refreshData('Produtos atualizados em tempo real');
     })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+      void refreshData('Produtos atualizados em tempo real');
+    })
     .on('postgres_changes', { event: '*', schema: 'public', table: 'logs_acesso' }, () => {
+      void refreshData('Historico atualizado em tempo real');
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'access_logs' }, () => {
       void refreshData('Historico atualizado em tempo real');
     })
     .subscribe();
