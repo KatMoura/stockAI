@@ -1,9 +1,9 @@
 import type { AccessLog, AppUser, Product, Repository } from '../models';
 
 const STORAGE_KEYS = {
-  users: 'stockia.usuarios',
-  products: 'stockia.produtos',
-  accessLogs: 'stockia.logs_acesso',
+  usuarios: 'stockia.usuarios',
+  produtos: 'stockia.produtos',
+  logs_acesso: 'stockia.logs_acesso',
 };
 
 function readJson<T>(key: string, fallback: T): T {
@@ -25,42 +25,42 @@ function writeJson<T>(key: string, value: T): void {
 
 export class LocalRepository implements Repository {
   async getUsers(): Promise<AppUser[]> {
-    return readJson<AppUser[]>(STORAGE_KEYS.users, []);
+    return readJson<AppUser[]>(STORAGE_KEYS.usuarios, []);
   }
 
   async saveUsers(users: AppUser[]): Promise<void> {
-    writeJson(STORAGE_KEYS.users, users);
+    writeJson(STORAGE_KEYS.usuarios, users);
   }
 
   async deleteUser(userId: string): Promise<void> {
-    const users = readJson<AppUser[]>(STORAGE_KEYS.users, []);
+    const users = readJson<AppUser[]>(STORAGE_KEYS.usuarios, []);
     writeJson(
-      STORAGE_KEYS.users,
+      STORAGE_KEYS.usuarios,
       users.filter((user) => user.id !== userId),
     );
   }
 
   async getProducts(): Promise<Product[]> {
-    return readJson<Product[]>(STORAGE_KEYS.products, []);
+    return readJson<Product[]>(STORAGE_KEYS.produtos, []);
   }
 
   async saveProducts(products: Product[]): Promise<void> {
-    writeJson(STORAGE_KEYS.products, products);
+    writeJson(STORAGE_KEYS.produtos, products);
   }
 
   async deleteProduct(productId: string): Promise<void> {
-    const products = readJson<Product[]>(STORAGE_KEYS.products, []);
+    const products = readJson<Product[]>(STORAGE_KEYS.produtos, []);
     writeJson(
-      STORAGE_KEYS.products,
+      STORAGE_KEYS.produtos,
       products.filter((product) => product.id !== productId),
     );
   }
 
   async getAccessLogs(): Promise<AccessLog[]> {
-    return readJson<AccessLog[]>(STORAGE_KEYS.accessLogs, []);
+    return readJson<AccessLog[]>(STORAGE_KEYS.logs_acesso, []);
   }
 
   async saveAccessLogs(logs: AccessLog[]): Promise<void> {
-    writeJson(STORAGE_KEYS.accessLogs, logs);
+    writeJson(STORAGE_KEYS.logs_acesso  , logs);
   }
 }
