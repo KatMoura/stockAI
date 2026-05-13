@@ -1246,6 +1246,34 @@ function renderCurrentScreen(): string {
   }
 }
 
+async function handleDeleteProduct(productId: string): Promise<void> {
+  const product = products.find((item) => item.id === productId);
+  if (!product) {
+    return;
+  }
+
+  const confirmed = confirm(`Excluir ${product.name}?`);
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await repository.deleteProduct(productId);
+    products = products.filter((item) => item.id !== productId);
+    if (editProductId === productId) {
+      editProductId = null;
+    }
+    renderApp();
+    await logAction('delete_product', product.name);
+    if (!isSupabaseProvider) {
+      await refreshData('Produto removido com sucesso');
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Falha ao excluir o produto.';
+    alert(message);
+  }
+}
+
 function renderApp(): void {
   if (!currentUser) {
     renderAuth();
@@ -1419,10 +1447,10 @@ async function handleProductSubmit(form: HTMLFormElement): Promise<void> {
         ? {
             ...product,
             name,
-            category: category || product.category,
-            unit: unit || product.unit,
-            barcode: barcode || product.barcode,
-            imageUrl: imageUrl || product.imageUrl,
+            category: category || undefined,
+            unit: unit || undefined,
+            barcode: barcode || undefined,
+            imageUrl: imageUrl || undefined,
             quantity,
             minQuantity,
             price,
@@ -1630,21 +1658,7 @@ app.addEventListener('click', (event) => {
     if (!productId) {
       return;
     }
-
-    const product = products.find((item) => item.id === productId);
-    if (!product) {
-      return;
-    }
-
-    const confirmed = confirm(`Excluir ${product.name}?`);
-    if (!confirmed) {
-      return;
-    }
-
-    products = products.filter((item) => item.id !== productId);
-    void repository.saveProducts(products);
-    void logAction('delete_product', product.name);
-    renderApp();
+    void handleDeleteProduct(productId);
     return;
   }
 

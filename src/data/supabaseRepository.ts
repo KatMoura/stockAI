@@ -117,6 +117,14 @@ export class SupabaseRepository implements Repository {
     }
   }
 
+  async deleteProduct(productId: string): Promise<void> {
+    const { error } = await this.client.from('products').delete().eq('id', productId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
   async getAccessLogs(): Promise<AccessLog[]> {
     const { data, error } = await this.client
       .from('access_logs')

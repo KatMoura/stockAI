@@ -49,6 +49,7 @@ export interface Repository {
   saveUsers(users: AppUser[]): Promise<void>;
   getProducts(): Promise<Product[]>;
   saveProducts(products: Product[]): Promise<void>;
+  deleteProduct(productId: string): Promise<void>;
   getAccessLogs(): Promise<AccessLog[]>;
   saveAccessLogs(logs: AccessLog[]): Promise<void>;
 }
