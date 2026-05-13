@@ -28,12 +28,12 @@ if (!appElement) {
 
 const app = appElement;
 const requestedProvider = import.meta.env.VITE_DATA_PROVIDER === 'supabase' ? 'supabase' : 'local';
-const repository: Repository =
+let repository: Repository =
   requestedProvider === 'supabase' && supabase && isSupabaseConfigured
     ? new SupabaseRepository(supabase)
     : new LocalRepository();
 
-const isSupabaseProvider = requestedProvider === 'supabase' && !!supabase && isSupabaseConfigured;
+let isSupabaseProvider = requestedProvider === 'supabase' && !!supabase && isSupabaseConfigured;
 const mobileMedia = window.matchMedia('(max-width: 960px)');
 
 let users: AppUser[] = [];
@@ -53,6 +53,21 @@ let syncStatus = isSupabaseProvider ? 'Tempo real ativo' : 'Sincronizacao local 
 let lastSyncedAt: string | null = null;
 let refreshInFlight: Promise<void> | null = null;
 const cleanups: Array<() => void> = [];
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Erro inesperado.';
+}
+
+async function activateLocalFallback(reason: string): Promise<void> {
+  repository = new LocalRepository();
+  isSupabaseProvider = false;
+  syncStatus = 'Modo local ativo';
+  authMessage = `${reason} O sistema entrou em modo local para continuar funcionando.`;
+  users = [];
+  products = [];
+  accessLogs = [];
+  await seedInitialData();
+}
 
 function id(): string {
   return crypto.randomUUID();
@@ -295,19 +310,30 @@ async function refreshData(reason = 'Atualizado'): Promise<void> {
   }
 
   refreshInFlight = (async () => {
-    const [nextUsers, nextProducts, nextLogs] = await Promise.all([
-      repository.getUsers(),
-      repository.getProducts(),
-      repository.getAccessLogs(),
-    ]);
+    try {
+      const [nextUsers, nextProducts, nextLogs] = await Promise.all([
+        repository.getUsers(),
+        repository.getProducts(),
+        repository.getAccessLogs(),
+      ]);
 
-    users = nextUsers;
-    products = nextProducts;
-    accessLogs = nextLogs;
-    syncCurrentUserReference();
-    lastSyncedAt = new Date().toISOString();
-    syncStatus = reason;
-    renderApp();
+      users = nextUsers;
+      products = nextProducts;
+      accessLogs = nextLogs;
+      syncCurrentUserReference();
+      lastSyncedAt = new Date().toISOString();
+      syncStatus = reason;
+      renderApp();
+    } catch (error) {
+      if (isSupabaseProvider) {
+        await activateLocalFallback(`Falha ao sincronizar com o Supabase: ${errorMessage(error)}.`);
+        subscribeToRealtime();
+        renderApp();
+        return;
+      }
+
+      throw error;
+    }
   })().finally(() => {
     refreshInFlight = null;
   });
@@ -330,7 +356,18 @@ async function logAction(action: AccessLog['action'], details?: string): Promise
   });
 
   accessLogs = accessLogs.slice(0, 1000);
-  await repository.saveAccessLogs(accessLogs);
+  try {
+    await repository.saveAccessLogs(accessLogs);
+  } catch (error) {
+    if (isSupabaseProvider) {
+      await activateLocalFallback(`Falha ao registrar evento no Supabase: ${errorMessage(error)}.`);
+      subscribeToRealtime();
+      renderApp();
+      return;
+    }
+
+    throw error;
+  }
 }
 
 async function seedInitialData(): Promise<void> {
@@ -1806,9 +1843,21 @@ function subscribeToRealtime(): void {
 }
 
 async function bootstrap(): Promise<void> {
-  await seedInitialData();
-  subscribeToRealtime();
-  renderAuth();
+  try {
+    await seedInitialData();
+    subscribeToRealtime();
+    renderAuth();
+  } catch (error) {
+    if (isSupabaseProvider) {
+      await activateLocalFallback(`Falha ao iniciar com o Supabase: ${errorMessage(error)}.`);
+      subscribeToRealtime();
+      renderAuth();
+      return;
+    }
+
+    authMessage = `Nao foi possivel iniciar o sistema: ${errorMessage(error)}.`;
+    renderAuth();
+  }
 }
 
 void bootstrap();
