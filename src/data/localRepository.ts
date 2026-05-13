@@ -1,9 +1,9 @@
 import type { AccessLog, AppUser, Product, Repository } from '../models';
 
 const STORAGE_KEYS = {
-  users: 'stockia.users',
-  products: 'stockia.products',
-  accessLogs: 'stockia.accessLogs',
+  users: 'stockia.usuarios',
+  products: 'stockia.produtos',
+  accessLogs: 'stockia.logs_acesso',
 };
 
 function readJson<T>(key: string, fallback: T): T {
