@@ -28,15 +28,15 @@ export class LocalRepository implements Repository {
     return readJson<AppUser[]>(STORAGE_KEYS.usuarios, []);
   }
 
-  async saveUsers(users: AppUser[]): Promise<void> {
-    writeJson(STORAGE_KEYS.usuarios, users);
+  async saveUsers(usuarios: AppUser[]): Promise<void> {
+    writeJson(STORAGE_KEYS.usuarios, usuarios);
   }
 
   async deleteUser(userId: string): Promise<void> {
-    const users = readJson<AppUser[]>(STORAGE_KEYS.usuarios, []);
+    const usuarios = readJson<AppUser[]>(STORAGE_KEYS.usuarios, []);
     writeJson(
       STORAGE_KEYS.usuarios,
-      users.filter((user) => user.id !== userId),
+      usuarios.filter((usuario) => usuario.id !== userId),
     );
   }
 
@@ -44,15 +44,15 @@ export class LocalRepository implements Repository {
     return readJson<Product[]>(STORAGE_KEYS.produtos, []);
   }
 
-  async saveProducts(products: Product[]): Promise<void> {
-    writeJson(STORAGE_KEYS.produtos, products);
+  async saveProducts(produtos: Product[]): Promise<void> {
+    writeJson(STORAGE_KEYS.produtos, produtos);
   }
 
   async deleteProduct(productId: string): Promise<void> {
-    const products = readJson<Product[]>(STORAGE_KEYS.produtos, []);
+    const produtos = readJson<Product[]>(STORAGE_KEYS.produtos, []);
     writeJson(
       STORAGE_KEYS.produtos,
-      products.filter((product) => product.id !== productId),
+      produtos.filter((produto) => produto.id !== productId),
     );
   }
 
