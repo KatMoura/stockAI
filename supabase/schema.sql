@@ -1,76 +1,73 @@
 create extension if not exists pgcrypto;
 
-create table if not exists users (
+create table if not exists usuarios (
   id uuid primary key default gen_random_uuid(),
-  name text not null,
+  nome text not null,
   email text unique not null,
-  password text not null,
+  senha text not null,
   role text not null check (role in ('admin', 'staff')),
-  created_at timestamptz not null default now(),
-  last_login_at timestamptz null
+  criado_as timestamptz not null default now(),
+  ultimo_login_as timestamptz null
 );
 
-create table if not exists products (
+create table if not exists produtos (
   id uuid primary key default gen_random_uuid(),
-  name text not null,
-  sku text unique not null,
-  category text null,
-  unit text null,
-  barcode text null,
+  nome text not null,
+  categoria text null,
+  codigo text null,
   image_url text null,
-  quantity integer not null default 0,
-  min_quantity integer not null default 0,
-  price numeric(12,2) not null default 0,
-  created_by uuid not null references users(id) on delete restrict,
-  created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now()
+  quantidade integer not null default 0,
+  min_quantidade integer not null default 0,
+  preco numeric(12,2) not null default 0,
+  criado_por uuid not null references usuarios(id) on delete restrict,
+  criado_em timestamptz not null default now(),
+  atualizado_em timestamptz not null default now()
 );
 
-create table if not exists access_logs (
+create table if not exists logs_acesso (
   id uuid primary key default gen_random_uuid(),
-  user_id uuid not null references users(id) on delete cascade,
-  user_name text not null,
-  action text not null,
+  id_usuario uuid not null references usuarios(id) on delete cascade,
+  nome_usuario text not null,
+  acao text not null,
   timestamp timestamptz not null default now(),
-  details text null
+  detalhes text null
 );
 
-create index if not exists idx_products_sku on products (sku);
-create index if not exists idx_access_logs_timestamp on access_logs (timestamp desc);
+create index if not exists idx_acesso_logs_timestamp on logs_acesso (timestamp desc);
 
-alter table users enable row level security;
-alter table products enable row level security;
-alter table access_logs enable row level security;
+alter table usuarios enable row level security;
+alter table produtos enable row level security;
+alter table logs_acesso enable row level security;
 
-create policy "Allow authenticated read users"
-  on users for select
+create policy "Allow authenticated read usuarios"
+  on usuarios for select
   to authenticated
   using (true);
 
-create policy "Allow authenticated write users"
-  on users for all
+create policy "Allow authenticated write usuarios"
+  on usuarios for all
   to authenticated
   using (true)
   with check (true);
 
-create policy "Allow authenticated read products"
-  on products for select
+create policy "Allow authenticated read produtos"
+  on produtos for select
   to authenticated
   using (true);
 
-create policy "Allow authenticated write products"
-  on products for all
+create policy "Allow authenticated write produtos"
+  on produtos for all
   to authenticated
   using (true)
   with check (true);
 
-create policy "Allow authenticated read access logs"
-  on access_logs for select
+create policy "Allow authenticated read logs access"
+  on logs_acesso for select
   to authenticated
   using (true);
 
-create policy "Allow authenticated write access logs"
-  on access_logs for all
+create policy "Allow authenticated write logs access"
+  on logs_acesso for all
   to authenticated
   using (true)
   with check (true);
