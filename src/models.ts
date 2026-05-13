@@ -33,7 +33,8 @@ export type AccessAction =
   | 'create_product'
   | 'update_product'
   | 'delete_product'
-  | 'create_user';
+  | 'create_user'
+  | 'delete_user';
 
 export interface AccessLog {
   id: string;
@@ -47,6 +48,7 @@ export interface AccessLog {
 export interface Repository {
   getUsers(): Promise<AppUser[]>;
   saveUsers(users: AppUser[]): Promise<void>;
+  deleteUser(userId: string): Promise<void>;
   getProducts(): Promise<Product[]>;
   saveProducts(products: Product[]): Promise<void>;
   deleteProduct(productId: string): Promise<void>;

@@ -4,28 +4,28 @@ import type { AccessLog, AppUser, Product, Repository } from '../models';
 function mapUser(row: Record<string, unknown>): AppUser {
   return {
     id: String(row.id),
-    name: String(row.name),
+    name: String(row.nome),
     email: String(row.email),
-    password: String(row.password),
+    password: String(row.senha),
     role: row.role === 'admin' ? 'admin' : 'staff',
-    createdAt: String(row.created_at),
-    lastLoginAt: row.last_login_at ? String(row.last_login_at) : undefined,
+    createdAt: String(row.criado_as),
+    lastLoginAt: row.ultimo_login_as ? String(row.ultimo_login_as) : undefined,
   };
 }
 
 function mapProduct(row: Record<string, unknown>): Product {
   return {
     id: String(row.id),
-    name: String(row.name),
-    quantity: Number(row.quantity),
-    minQuantity: Number(row.min_quantity),
-    price: Number(row.price),
-    createdBy: String(row.created_by),
-    createdAt: String(row.created_at),
-    updatedAt: String(row.updated_at),
-    category: row.category ? String(row.category) : undefined,
-    unit: row.unit ? String(row.unit) : undefined,
-    barcode: row.barcode ? String(row.barcode) : undefined,
+    name: String(row.nome),
+    quantity: Number(row.quantidade),
+    minQuantity: Number(row.min_quantidade),
+    price: Number(row.preco),
+    createdBy: String(row.criado_por),
+    createdAt: String(row.criado_em),
+    updatedAt: String(row.atualizado_em),
+    category: row.categoria ? String(row.categoria) : undefined,
+    unit: row.unidade ? String(row.unidade) : undefined,
+    barcode: row.codigo ? String(row.codigo) : undefined,
     imageUrl: row.image_url ? String(row.image_url) : undefined,
   };
 }
@@ -33,11 +33,11 @@ function mapProduct(row: Record<string, unknown>): Product {
 function mapAccessLog(row: Record<string, unknown>): AccessLog {
   return {
     id: String(row.id),
-    userId: String(row.user_id),
-    userName: String(row.user_name),
-    action: String(row.action) as AccessLog['action'],
+    userId: String(row.id_usuario),
+    userName: String(row.nome_usuario),
+    action: String(row.acao) as AccessLog['action'],
     timestamp: String(row.timestamp),
-    details: row.details ? String(row.details) : undefined,
+    details: row.detalhes ? String(row.detalhes) : undefined,
   };
 }
 
@@ -50,9 +50,9 @@ export class SupabaseRepository implements Repository {
 
   async getUsers(): Promise<AppUser[]> {
     const { data, error } = await this.client
-      .from('users')
+      .from('usuarios')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('criado_as', { ascending: false });
 
     if (error) {
       throw new Error(error.message);
@@ -64,15 +64,23 @@ export class SupabaseRepository implements Repository {
   async saveUsers(users: AppUser[]): Promise<void> {
     const payload = users.map((user) => ({
       id: user.id,
-      name: user.name,
+      nome: user.name,
       email: user.email,
-      password: user.password,
+      senha: user.password,
       role: user.role,
-      created_at: user.createdAt,
-      last_login_at: user.lastLoginAt ?? null,
+      criado_as: user.createdAt,
+      ultimo_login_as: user.lastLoginAt ?? null,
     }));
 
-    const { error } = await this.client.from('users').upsert(payload, { onConflict: 'id' });
+    const { error } = await this.client.from('usuarios').upsert(payload, { onConflict: 'id' });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    const { error } = await this.client.from('usuarios').delete().eq('id', userId);
 
     if (error) {
       throw new Error(error.message);
@@ -81,9 +89,9 @@ export class SupabaseRepository implements Repository {
 
   async getProducts(): Promise<Product[]> {
     const { data, error } = await this.client
-      .from('products')
+      .from('produtos')
       .select('*')
-      .order('updated_at', { ascending: false });
+      .order('atualizado_em', { ascending: false });
 
     if (error) {
       throw new Error(error.message);
@@ -95,21 +103,21 @@ export class SupabaseRepository implements Repository {
   async saveProducts(products: Product[]): Promise<void> {
     const payload = products.map((product) => ({
       id: product.id,
-      name: product.name,
-      quantity: product.quantity,
-      min_quantity: product.minQuantity,
-      price: product.price,
-      created_by: product.createdBy,
-      created_at: product.createdAt,
-      updated_at: product.updatedAt,
-      category: product.category ?? null,
-      unit: product.unit ?? null,
-      barcode: product.barcode ?? null,
+      nome: product.name,
+      quantidade: product.quantity,
+      min_quantidade: product.minQuantity,
+      preco: product.price,
+      criado_por: product.createdBy,
+      criado_em: product.createdAt,
+      atualizado_em: product.updatedAt,
+      categoria: product.category ?? null,
+      unidade: product.unit ?? null,
+      codigo: product.barcode ?? null,
       image_url: product.imageUrl ?? null,
     }));
 
     const { error } = await this.client
-      .from('products')
+      .from('produtos')
       .upsert(payload, { onConflict: 'id' });
 
     if (error) {
@@ -118,7 +126,7 @@ export class SupabaseRepository implements Repository {
   }
 
   async deleteProduct(productId: string): Promise<void> {
-    const { error } = await this.client.from('products').delete().eq('id', productId);
+    const { error } = await this.client.from('produtos').delete().eq('id', productId);
 
     if (error) {
       throw new Error(error.message);
@@ -127,7 +135,7 @@ export class SupabaseRepository implements Repository {
 
   async getAccessLogs(): Promise<AccessLog[]> {
     const { data, error } = await this.client
-      .from('access_logs')
+      .from('logs_acesso')
       .select('*')
       .order('timestamp', { ascending: false });
 
@@ -141,15 +149,15 @@ export class SupabaseRepository implements Repository {
   async saveAccessLogs(logs: AccessLog[]): Promise<void> {
     const payload = logs.map((log) => ({
       id: log.id,
-      user_id: log.userId,
-      user_name: log.userName,
-      action: log.action,
+      id_usuario: log.userId,
+      nome_usuario: log.userName,
+      acao: log.action,
       timestamp: log.timestamp,
-      details: log.details ?? null,
+      detalhes: log.details ?? null,
     }));
 
     const { error } = await this.client
-      .from('access_logs')
+      .from('logs_acesso')
       .upsert(payload, { onConflict: 'id' });
 
     if (error) {

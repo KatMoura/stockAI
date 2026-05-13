@@ -32,6 +32,14 @@ export class LocalRepository implements Repository {
     writeJson(STORAGE_KEYS.users, users);
   }
 
+  async deleteUser(userId: string): Promise<void> {
+    const users = readJson<AppUser[]>(STORAGE_KEYS.users, []);
+    writeJson(
+      STORAGE_KEYS.users,
+      users.filter((user) => user.id !== userId),
+    );
+  }
+
   async getProducts(): Promise<Product[]> {
     return readJson<Product[]>(STORAGE_KEYS.products, []);
   }

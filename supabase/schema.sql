@@ -14,6 +14,7 @@ create table if not exists produtos (
   id uuid primary key default gen_random_uuid(),
   nome text not null,
   categoria text null,
+  unidade text null,
   codigo text null,
   image_url text null,
   quantidade integer not null default 0,
@@ -39,35 +40,35 @@ alter table usuarios enable row level security;
 alter table produtos enable row level security;
 alter table logs_acesso enable row level security;
 
-create policy "Allow authenticated read usuarios"
+create policy "Allow public read usuarios"
   on usuarios for select
-  to authenticated
+  to anon, authenticated
   using (true);
 
-create policy "Allow authenticated write usuarios"
+create policy "Allow public write usuarios"
   on usuarios for all
-  to authenticated
+  to anon, authenticated
   using (true)
   with check (true);
 
-create policy "Allow authenticated read produtos"
+create policy "Allow public read produtos"
   on produtos for select
-  to authenticated
+  to anon, authenticated
   using (true);
 
-create policy "Allow authenticated write produtos"
+create policy "Allow public write produtos"
   on produtos for all
-  to authenticated
+  to anon, authenticated
   using (true)
   with check (true);
 
-create policy "Allow authenticated read logs access"
+create policy "Allow public read logs access"
   on logs_acesso for select
-  to authenticated
+  to anon, authenticated
   using (true);
 
-create policy "Allow authenticated write logs access"
+create policy "Allow public write logs access"
   on logs_acesso for all
-  to authenticated
+  to anon, authenticated
   using (true)
   with check (true);

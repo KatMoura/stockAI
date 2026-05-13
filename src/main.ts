@@ -1050,6 +1050,7 @@ function renderUsers(): string {
     return '<section class="panel"><p>Acesso restrito ao administrador.</p></section>';
   }
 
+  const adminUser = currentUser;
   const editingUser = editingUserId ? users.find((user) => user.id === editingUserId) : null;
   const admins = users.filter((user) => user.role === 'admin').length;
   const staff = users.length - admins;
@@ -1140,6 +1141,11 @@ function renderUsers(): string {
                       <td>${lastLoginForUser(user.id) ? dateTime(lastLoginForUser(user.id) as string) : '-'}</td>
                       <td class="actions">
                         <button data-action="edit-user" data-id="${user.id}">Editar</button>
+                        ${
+                          adminUser.id !== user.id
+                            ? `<button data-action="delete-user" data-id="${user.id}" class="danger">Excluir</button>`
+                            : ''
+                        }
                       </td>
                     </tr>
                   `,
@@ -1270,6 +1276,49 @@ async function handleDeleteProduct(productId: string): Promise<void> {
     }
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Falha ao excluir o produto.';
+    alert(message);
+  }
+}
+
+async function handleDeleteUser(userId: string): Promise<void> {
+  if (!isAdmin(currentUser)) {
+    return;
+  }
+
+  const user = users.find((item) => item.id === userId);
+  if (!user) {
+    return;
+  }
+
+  if (currentUser.id === userId) {
+    alert('Voce nao pode excluir o proprio usuario logado.');
+    return;
+  }
+
+  const adminCount = users.filter((item) => item.role === 'admin').length;
+  if (user.role === 'admin' && adminCount <= 1) {
+    alert('Nao e permitido excluir o ultimo administrador do sistema.');
+    return;
+  }
+
+  const confirmed = confirm(`Excluir o funcionario ${user.name}?`);
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await repository.deleteUser(userId);
+    users = users.filter((item) => item.id !== userId);
+    if (editingUserId === userId) {
+      editingUserId = null;
+    }
+    renderApp();
+    await logAction('delete_user', user.name);
+    if (!isSupabaseProvider) {
+      await refreshData('Funcionario removido com sucesso');
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Falha ao excluir o funcionario.';
     alert(message);
   }
 }
@@ -1673,6 +1722,16 @@ app.addEventListener('click', (event) => {
     return;
   }
 
+  if (action === 'delete-user') {
+    const userId = button.dataset.id;
+    if (!userId) {
+      return;
+    }
+
+    void handleDeleteUser(userId);
+    return;
+  }
+
   if (action === 'cancel-user-edit') {
     editingUserId = null;
     renderApp();
@@ -1730,13 +1789,13 @@ function subscribeToRealtime(): void {
 
   const channel = client
     .channel('stockia-live')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'usuarios' }, () => {
       void refreshData('Usuarios atualizados em tempo real');
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'produtos' }, () => {
       void refreshData('Produtos atualizados em tempo real');
     })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'access_logs' }, () => {
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'logs_acesso' }, () => {
       void refreshData('Historico atualizado em tempo real');
     })
     .subscribe();
